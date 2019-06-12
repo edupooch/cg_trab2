@@ -23,17 +23,26 @@ def print_features_csv(features, file):
 
 
 def __init__():
-    # for imagePath in paths.list_images("data"):
-    #     img = cv2.imread(imagePath, 0)
-    #     histogram = get_histogram(img)
-    #     show_histogram(histogram)
-    #
-    #     plt.hist(img.ravel(), 256, [0, 256])
-    #     plt.show()
-
     file = open('features.csv', mode='w')
+    first = True
 
-    img = imread(("data/Capim/RT21_1.jpg"), 0)
+    for imagePath in paths.list_images("data"):
+        img = imread(imagePath, 0)
+
+        entry = {'name': imagePath.split('/').pop()}
+        features = extract_features(img)
+        entry.update(features)
+        entry['class'] = imagePath.split('/')[-2].lower()
+
+        if first:
+            print_head_csv(entry, file)
+            first = False
+        print_features_csv(entry, file=file)
+
+    file.close()
+
+
+def extract_features(img):
     histogram = get_histogram(img)
 
     features = {
@@ -44,15 +53,14 @@ def __init__():
         "hist_0_64": get_region_count(histogram, 0, 64),
         "hist_64_128": get_region_count(histogram, 64, 128),
         "hist_128_192": get_region_count(histogram, 128, 192),
-        "hist192_256": get_region_count(histogram, 192, 256),
+        "hist_192_256": get_region_count(histogram, 192, 256),
         "his_avg": get_average(histogram),
         "his_std": get_st_deviation(histogram),
         "his_kur": get_kurtosis(histogram),
         "his_med": get_median(histogram),
     }
 
-    print_head_csv(features, file)
-    print_features_csv(features, file=file)
+    return features
 
 
 def get_histogram(img):
@@ -130,7 +138,7 @@ def get_median(obj):
 
 def get_region_count(histogram, start, end):
     count = 0
-    for i in range(start,end):
+    for i in range(start, end):
         count += int(histogram[i])
     return count
 
