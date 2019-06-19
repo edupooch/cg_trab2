@@ -6,13 +6,10 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import cross_val_score
 from sklearn.metrics import accuracy_score
 
-if len(sys.argv) != 3:
-    print('Requeridos 2 argumentos: arquivo de treino e arquivo de teste')
-    sys.exit(1)
 
 # Lê os arquivos
-treino = pd.read_csv(sys.argv[1])
-teste = pd.read_csv(sys.argv[2])
+treino = pd.read_csv('train.csv')
+teste = pd.read_csv('test.csv')
 atributos = np.asarray(treino.columns)
 if not np.array_equal(atributos, teste.columns):
     print('Os arquivos possuem atributos distintos')
@@ -24,6 +21,7 @@ id = atributos[0]
 preditivos = atributos[1: - 1]
 # E que o atributo alvo é o último
 alvo = atributos[-1]
+
 print('Atributo identificador:', id)
 print('Atributos preditivos:', ', '.join(preditivos))
 print('Atributo alvo:', alvo)

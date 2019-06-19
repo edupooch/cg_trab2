@@ -2,7 +2,7 @@ from imutils import paths
 import numpy as np
 
 import matplotlib.pyplot as plt
-from math import ceil
+from math import ceil, sqrt
 from cv2 import imread
 
 N_REGIONS_HIST = 4
@@ -42,6 +42,15 @@ def __init__():
     file.close()
 
 
+def flat_hist(histogram, start, end):
+    flat = []
+    for gray_level in range(start, end):
+        frequency = int(histogram[gray_level])
+        flat = flat + ([gray_level] * frequency)
+
+    return np.asarray(flat)
+
+
 def extract_features(img):
     histogram = get_histogram(img)
 
@@ -50,14 +59,30 @@ def extract_features(img):
         "img_std": get_st_deviation(img),
         "img_kur": get_kurtosis(img),
         "img_med": get_median(img),
-        "hist_0_64": get_region_count(histogram, 0, 64),
-        "hist_64_128": get_region_count(histogram, 64, 128),
-        "hist_128_192": get_region_count(histogram, 128, 192),
-        "hist_192_256": get_region_count(histogram, 192, 256),
-        "his_avg": get_average(histogram),
-        "his_std": get_st_deviation(histogram),
-        "his_kur": get_kurtosis(histogram),
-        "his_med": get_median(histogram),
+
+        "hist_0_64": get_region_count(histogram[0:64]),
+        "hist_0_64_avg": get_average(flat_hist(histogram, 0, 64)),
+        "hist_0_64_std": get_st_deviation(flat_hist(histogram, 0, 64)),
+        "hist_0_64_kur": get_kurtosis(flat_hist(histogram, 0, 64)),
+        "hist_0_64_med": get_median(flat_hist(histogram, 0, 64)),
+
+        "hist_64_128": get_region_count(histogram[64:128]),
+        "hist_64_128_avg": get_average(flat_hist(histogram, 64, 128)),
+        "hist_64_128_std": get_st_deviation(flat_hist(histogram, 64, 128)),
+        "hist_64_128_kur": get_kurtosis(flat_hist(histogram, 64, 128)),
+        "hist_64_128_median": get_median(flat_hist(histogram, 64, 128)),
+
+        "hist_128_192": get_region_count(histogram[128:192]),
+        "hist_128_192_avg": get_average(flat_hist(histogram, 128, 192)),
+        "hist_128_192_std": get_st_deviation(flat_hist(histogram, 128, 192)),
+        "hist_128_192_kur": get_kurtosis(flat_hist(histogram, 128, 192)),
+        "hist_128_192_median": get_median(flat_hist(histogram, 128, 192)),
+
+        "hist_192_256": get_region_count(histogram[192:256]),
+        "hist_192_256_avg": get_average(flat_hist(histogram, 192, 256)),
+        "hist_192_256_std": get_st_deviation(flat_hist(histogram, 192, 256)),
+        "hist_192_256_kur": get_kurtosis(flat_hist(histogram, 192, 256)),
+        "hist_192_256_median": get_median(flat_hist(histogram, 192, 256)),
     }
 
     return features
@@ -86,6 +111,9 @@ def get_average(obj):
 
     size = obj.shape[0]
 
+    if size == 0:
+        return 0
+
     for i in range(size):
         o_sum += obj[i]
 
@@ -99,10 +127,16 @@ def get_st_deviation(obj):
     obj_avg = get_average(obj)
     size = obj.shape[0]
 
+    if size == 0:
+        return 0
+
     for i in range(size):
         o_sum += (obj[i] - obj_avg) ** 2
 
-    return (o_sum / size - 1) ** (1 / 2)
+    if size > 1:
+        size = size - 1
+
+    return (o_sum / size) ** (1 / 2)
 
 
 def get_kurtosis(obj):
@@ -113,8 +147,11 @@ def get_kurtosis(obj):
     obj_std = get_st_deviation(obj)
     size = obj.shape[0]
 
+    if obj_std == 0:
+        return 0
+
     for i in range(size):
-        o_sum += ((obj[i] - obj_avg) / obj_std) ** 4
+        o_sum += (((obj[i] - obj_avg) / obj_std) ** 4)
 
     return (o_sum / size)
 
@@ -124,8 +161,13 @@ def get_median(obj):
     obj.sort()
 
     size = obj.shape[0]
-    middle = size / 2
 
+    if size == 0:
+        return 0
+    if size == 1:
+        return obj[0]
+
+    middle = size / 2
     is_even = (middle % 2) == 0
 
     if is_even:
@@ -136,11 +178,13 @@ def get_median(obj):
     return median
 
 
-def get_region_count(histogram, start, end):
+def get_region_count(histogram_region):
     count = 0
-    for i in range(start, end):
-        count += int(histogram[i])
+    for i in range(len(histogram_region)):
+        count += int(histogram_region[i])
     return count
 
+def get_mco(image):
+    pass
 
 __init__()
