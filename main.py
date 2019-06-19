@@ -1,3 +1,5 @@
+import sys
+
 from imutils import paths
 import numpy as np
 
@@ -6,29 +8,16 @@ from math import ceil, sqrt
 from cv2 import imread
 
 N_REGIONS_HIST = 4
-
-
-def print_head_csv(features, file):
-    head = ""
-    for key in features:
-        head = head + str(key) + ","
-    print(head[:-1], file=file)
-
-
-def print_features_csv(features, file):
-    entry = ""
-    for key in features:
-        entry = entry + str(features[key]) + ","
-    print(entry[:-1], file=file)
-
+GLCM_QT_LEVELS = 32
 
 def __init__():
+    np.set_printoptions(threshold=sys.maxsize)
+
     file = open('features.csv', mode='w')
     first = True
 
-    for imagePath in paths.list_images("data"):
+    for imagePath in paths.list_images("teste"):
         img = imread(imagePath, 0)
-
         entry = {'name': imagePath.split('/').pop()}
         features = extract_features(img)
         entry.update(features)
@@ -42,17 +31,9 @@ def __init__():
     file.close()
 
 
-def flat_hist(histogram, start, end):
-    flat = []
-    for gray_level in range(start, end):
-        frequency = int(histogram[gray_level])
-        flat = flat + ([gray_level] * frequency)
-
-    return np.asarray(flat)
-
-
 def extract_features(img):
     histogram = get_histogram(img)
+    get_glcm(img, (1, 0))
 
     features = {
         "img_avg": get_average(img),
@@ -88,6 +69,20 @@ def extract_features(img):
     return features
 
 
+def print_head_csv(features, file):
+    head = ""
+    for key in features:
+        head = head + str(key) + ","
+    print(head[:-1], file=file)
+
+
+def print_features_csv(features, file):
+    entry = ""
+    for key in features:
+        entry = entry + str(features[key]) + ","
+    print(entry[:-1], file=file)
+
+
 def get_histogram(img):
     x_size = img.shape[0]
     y_size = img.shape[1]
@@ -98,6 +93,15 @@ def get_histogram(img):
             gray_level = img[i, j]
             histogram[gray_level] += 1
     return histogram
+
+
+def flat_hist(histogram, start, end):
+    flat = []
+    for gray_level in range(start, end):
+        frequency = int(histogram[gray_level])
+        flat = flat + ([gray_level] * frequency)
+
+    return np.asarray(flat)
 
 
 def show_histogram(histogram):
@@ -184,7 +188,38 @@ def get_region_count(histogram_region):
         count += int(histogram_region[i])
     return count
 
-def get_mco(image):
-    pass
+
+def get_glcm(img, mask):
+    img = reduce_tones(img)
+
+    size_x = img.shape[0]
+    size_y = img.shape[1]
+
+    glcm = np.zeros((GLCM_QT_LEVELS, GLCM_QT_LEVELS))
+    dis_x = mask[0]
+    dis_y = mask[1]
+
+    for x in range(size_x):
+        for y in range(size_y):
+            try:
+                point = img[x, y]
+                neighbor = img[x + dis_x, y + dis_y]
+                glcm[point, neighbor] += 1
+            except:
+                pass
+
+    return glcm
+
+
+def reduce_tones(img):
+    size_x = img.shape[0]
+    size_y = img.shape[1]
+
+    for x in range(size_x):
+        for y in range(size_y):
+            img[x, y] = img[x, y] / (256 / GLCM_QT_LEVELS)
+
+    return img
+
 
 __init__()
