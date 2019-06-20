@@ -10,6 +10,7 @@ from cv2 import imread
 N_REGIONS_HIST = 4
 GLCM_QT_LEVELS = 32
 
+
 def __init__():
     np.set_printoptions(threshold=sys.maxsize)
 
@@ -198,6 +199,7 @@ def get_glcm(img, mask):
     glcm = np.zeros((GLCM_QT_LEVELS, GLCM_QT_LEVELS))
     dis_x = mask[0]
     dis_y = mask[1]
+    max_value = 0
 
     for x in range(size_x):
         for y in range(size_y):
@@ -205,9 +207,14 @@ def get_glcm(img, mask):
                 point = img[x, y]
                 neighbor = img[x + dis_x, y + dis_y]
                 glcm[point, neighbor] += 1
+
+                if glcm[point, neighbor] > max_value:
+                    max_value = glcm[point, neighbor]
             except:
                 pass
 
+    glcm = normalize_glcm(glcm, max_value)
+    print(glcm)
     return glcm
 
 
@@ -220,6 +227,13 @@ def reduce_tones(img):
             img[x, y] = img[x, y] / (256 / GLCM_QT_LEVELS)
 
     return img
+
+
+def normalize_glcm(glcm, max_value):
+    for x in range(GLCM_QT_LEVELS):
+        for y in range(GLCM_QT_LEVELS):
+            glcm[x, y] = glcm[x, y] / max_value
+    return glcm
 
 
 __init__()
