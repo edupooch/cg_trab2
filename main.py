@@ -5,10 +5,10 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 from math import ceil
-from cv2 import imread
+from cv2 import imread, imshow, cv2
 
 N_REGIONS_HIST = 4
-GLCM_QT_LEVELS = 64
+GLCM_QT_LEVELS = 32
 
 
 def __init__():
@@ -19,10 +19,13 @@ def __init__():
 
     for imagePath in paths.list_images("data"):
         img = imread(imagePath, 0)
-        entry = {'name': imagePath.split('\\').pop()}
+
+        entry = {'name': imagePath.split('/').pop()}
+
         features = extract_features(img)
+
         entry.update(features)
-        entry['class'] = imagePath.split('\\')[-2].lower()
+        entry['class'] = imagePath.split('/')[-2].lower()
 
         if first:
             print_head_csv(entry, file)
@@ -34,58 +37,60 @@ def __init__():
 
 def extract_features(img):
     histogram = get_histogram(img)
-    glcm_1_0 = get_glcm(img, (1, 0))
-    glcm_0_1 = get_glcm(img, (0, 1))
-    glcm_1__1 = get_glcm(img, (1, -1))
+    glcm_3_0 = get_glcm(img, (3, 0))
+    glcm_0_3 = get_glcm(img, (0, 3))
+    glcm_3__3 = get_glcm(img, (3, -3))
+
+    lbp = get_lbp(img)
 
     features = {
-        "img_avg": get_average(img),
-        "img_std": get_st_deviation(img),
-        "img_kur": get_kurtosis(img),
-        "img_med": get_median(img),
-
-        "hist_0_64_count": get_region_count(histogram[0:64]),
-        "hist_0_64_avg": get_average(flat_hist(histogram, 0, 64)),
-        "hist_0_64_std": get_st_deviation(flat_hist(histogram, 0, 64)),
-        "hist_0_64_kur": get_kurtosis(flat_hist(histogram, 0, 64)),
-        "hist_0_64_med": get_median(flat_hist(histogram, 0, 64)),
-
-        "hist_64_128_count": get_region_count(histogram[64:128]),
-        "hist_64_128_avg": get_average(flat_hist(histogram, 64, 128)),
-        "hist_64_128_std": get_st_deviation(flat_hist(histogram, 64, 128)),
-        "hist_64_128_kur": get_kurtosis(flat_hist(histogram, 64, 128)),
-        "hist_64_128_median": get_median(flat_hist(histogram, 64, 128)),
-
-        "hist_128_192_count": get_region_count(histogram[128:192]),
-        "hist_128_192_avg": get_average(flat_hist(histogram, 128, 192)),
-        "hist_128_192_std": get_st_deviation(flat_hist(histogram, 128, 192)),
-        "hist_128_192_kur": get_kurtosis(flat_hist(histogram, 128, 192)),
-        "hist_128_192_median": get_median(flat_hist(histogram, 128, 192)),
-
-        "hist_192_256_count": get_region_count(histogram[192:256]),
-        "hist_192_256_avg": get_average(flat_hist(histogram, 192, 256)),
-        "hist_192_256_std": get_st_deviation(flat_hist(histogram, 192, 256)),
-        "hist_192_256_kur": get_kurtosis(flat_hist(histogram, 192, 256)),
-        "hist_192_256_median": get_median(flat_hist(histogram, 192, 256)),
-
-        "glcm_1_0_asm": get_glcm_asm(glcm_1_0),
-        "glcm_1_0_entropy": get_glcm_entropy(glcm_1_0),
-        "glcm_1_0_contrast": get_glcm_contrast(glcm_1_0),
-        "glcm_1_0_variance": get_glcm_variance(glcm_1_0),
-        "glcm_1_0_homogeneity": get_glcm_homogeneity(glcm_1_0),
-
-        "glcm_0_1_asm": get_glcm_asm(glcm_0_1),
-        "glcm_0_1_entropy": get_glcm_entropy(glcm_0_1),
-        "glcm_0_1_contrast": get_glcm_contrast(glcm_0_1),
-        "glcm_0_1_variance": get_glcm_variance(glcm_0_1),
-        "glcm_0_1_homogeneity": get_glcm_homogeneity(glcm_0_1),
-
-        "glcm_1__1_asm": get_glcm_asm(glcm_1__1),
-        "glcm_1__1_entropy": get_glcm_entropy(glcm_1__1),
-        "glcm_1__1_contrast": get_glcm_contrast(glcm_1__1),
-        "glcm_1__1_variance": get_glcm_variance(glcm_1__1),
-        "glcm_1__1_homogeneity": get_glcm_homogeneity(glcm_1__1),
-
+        #     "img_avg": get_average(img),
+        #     "img_std": get_st_deviation(img),
+        #     "img_kur": get_kurtosis(img),
+        #     "img_med": get_median(img),
+        #
+        #     "hist_0_64_count": get_region_count(histogram[0:64]),
+        #     "hist_0_64_avg": get_average(flat_hist(histogram, 0, 64)),
+        #     "hist_0_64_std": get_st_deviation(flat_hist(histogram, 0, 64)),
+        #     "hist_0_64_kur": get_kurtosis(flat_hist(histogram, 0, 64)),
+        #     "hist_0_64_med": get_median(flat_hist(histogram, 0, 64)),
+        #
+        #     "hist_64_128_count": get_region_count(histogram[64:128]),
+        #     "hist_64_128_avg": get_average(flat_hist(histogram, 64, 128)),
+        #     "hist_64_128_std": get_st_deviation(flat_hist(histogram, 64, 128)),
+        #     "hist_64_128_kur": get_kurtosis(flat_hist(histogram, 64, 128)),
+        #     "hist_64_128_median": get_median(flat_hist(histogram, 64, 128)),
+        #
+        #     "hist_128_192_count": get_region_count(histogram[128:192]),
+        #     "hist_128_192_avg": get_average(flat_hist(histogram, 128, 192)),
+        #     "hist_128_192_std": get_st_deviation(flat_hist(histogram, 128, 192)),
+        #     "hist_128_192_kur": get_kurtosis(flat_hist(histogram, 128, 192)),
+        #     "hist_128_192_median": get_median(flat_hist(histogram, 128, 192)),
+        #
+        #     "hist_192_256_count": get_region_count(histogram[192:256]),
+        #     "hist_192_256_avg": get_average(flat_hist(histogram, 192, 256)),
+        #     "hist_192_256_std": get_st_deviation(flat_hist(histogram, 192, 256)),
+        #     "hist_192_256_kur": get_kurtosis(flat_hist(histogram, 192, 256)),
+        #     "hist_192_256_median": get_median(flat_hist(histogram, 192, 256)),
+        #
+        #     "glcm_3_0_asm": get_glcm_asm(glcm_3_0),
+        #     "glcm_3_0_entropy": get_glcm_entropy(glcm_3_0),
+        #     "glcm_3_0_contrast": get_glcm_contrast(glcm_3_0),
+        #     "glcm_3_0_variance": get_glcm_variance(glcm_3_0),
+        #     "glcm_3_0_homogeneity": get_glcm_homogeneity(glcm_3_0),
+        #
+        #     "glcm_0_3_asm": get_glcm_asm(glcm_0_3),
+        #     "glcm_0_3_entropy": get_glcm_entropy(glcm_0_3),
+        #     "glcm_0_3_contrast": get_glcm_contrast(glcm_0_3),
+        #     "glcm_0_3_variance": get_glcm_variance(glcm_0_3),
+        #     "glcm_0_3_homogeneity": get_glcm_homogeneity(glcm_0_3),
+        #
+        #     "glcm_3__3_asm": get_glcm_asm(glcm_3__3),
+        #     "glcm_3__3_entropy": get_glcm_entropy(glcm_3__3),
+        #     "glcm_3__3_contrast": get_glcm_contrast(glcm_3__3),
+        #     "glcm_3__3_variance": get_glcm_variance(glcm_3__3),
+        #     "glcm_3__3_homogeneity": get_glcm_homogeneity(glcm_3__3),
+        #
     }
 
     return features
@@ -183,7 +188,7 @@ def get_kurtosis(obj):
 
 
 def get_median(obj):
-    obj = obj.ravel()
+    obj = obj.ravel().copy()
     obj.sort()
 
     size = obj.shape[0]
@@ -212,27 +217,26 @@ def get_region_count(histogram_region):
 
 
 def get_glcm(img, mask):
-    img = reduce_tones(img)
-
-    size_x = img.shape[0]
-    size_y = img.shape[1]
+    r_img = reduce_tones(img)
+    size_x = r_img.shape[0]
+    size_y = r_img.shape[1]
 
     glcm = np.zeros((GLCM_QT_LEVELS, GLCM_QT_LEVELS))
+
     dis_x = mask[0]
     dis_y = mask[1]
     max_value = 0
 
     for x in range(size_x):
         for y in range(size_y):
-            try:
-                point = img[x, y]
-                neighbor = img[x + dis_x, y + dis_y]
+            if (x + dis_x >= 0 and x + dis_x < size_x) and (y + dis_y >= 0 and y + dis_y < size_y):
+                point = int(r_img[x, y])
+                neighbor = int(r_img[x + dis_x, y + dis_y])
+
                 glcm[point, neighbor] += 1
 
                 if glcm[point, neighbor] > max_value:
                     max_value = glcm[point, neighbor]
-            except:
-                pass
 
     glcm = normalize_glcm(glcm, max_value)
     return glcm
@@ -241,19 +245,21 @@ def get_glcm(img, mask):
 def reduce_tones(img):
     size_x = img.shape[0]
     size_y = img.shape[1]
+    r_img = np.zeros((size_x, size_y))
 
     for x in range(size_x):
         for y in range(size_y):
-            img[x, y] = img[x, y] / (256 / GLCM_QT_LEVELS)
+            r_img[x, y] = int(img[x, y] / (256 / GLCM_QT_LEVELS))
 
-    return img
+    return r_img
 
 
 def normalize_glcm(glcm, max_value):
+    norm_glcm = np.zeros((GLCM_QT_LEVELS, GLCM_QT_LEVELS))
     for x in range(GLCM_QT_LEVELS):
         for y in range(GLCM_QT_LEVELS):
-            glcm[x, y] = glcm[x, y] / max_value
-    return glcm
+            norm_glcm[x, y] = glcm[x, y] / max_value
+    return norm_glcm
 
 
 def get_glcm_asm(glcm):
@@ -290,6 +296,45 @@ def get_glcm_homogeneity(glcm):
         for j in range(GLCM_QT_LEVELS):
             homogeneity += glcm[i, j] * (glcm[i, j] / (1 + ((i - j) ** 2)))
     return homogeneity
+
+
+def get_lbp(img):
+    lbp = np.zeros(img.shape, dtype=np.uint8)
+    img_pad = np.zeros((img.shape[0] + 4, (img.shape[1] + 4)))
+    img_pad[2:img.shape[0] + 2, 2:img.shape[1] + 2] = img
+
+    neighbours = [(1, -1), (1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1)]
+
+    for i in range(0, img_pad.shape[0] - 4):
+        for j in range(0, img_pad.shape[0] - 4):
+            byte = ""
+            for point in neighbours:
+                if img_pad[i + 2 + point[0], j + 2 + point[1]] >= img_pad[i+2, j+2]:
+                    byte = "1" + byte
+                else:
+                    byte = "0" + byte
+            lbp[i, j] = int(byte, 2)
+
+    print(lbp.astype(int))
+    imshow('img', img)
+    imshow('lbp', lbp)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+
+def replacer(s, newstring, index, nofail=False):
+    # raise an error if index is outside of the string
+    if not nofail and index not in xrange(len(s)):
+        raise ValueError("index outside given string")
+
+    # if not erroring, but the index is still not in the correct range..
+    if index < 0:  # add it to the beginning
+        return newstring + s
+    if index > len(s):  # add it to the end
+        return s + newstring
+
+    # insert the new string between "slices" of the original
+    return s[:index] + newstring + s[index + 1:]
 
 
 __init__()

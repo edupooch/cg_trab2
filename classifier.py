@@ -6,10 +6,11 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import cross_val_score
 from sklearn.metrics import accuracy_score
 
-
 # Lê os arquivos
 treino = pd.read_csv('train.csv')
 teste = pd.read_csv('test.csv')
+
+
 atributos = np.asarray(treino.columns)
 if not np.array_equal(atributos, teste.columns):
     print('Os arquivos possuem atributos distintos')
