@@ -4,11 +4,11 @@ from imutils import paths
 import numpy as np
 
 import matplotlib.pyplot as plt
-from math import ceil, sqrt
+from math import ceil
 from cv2 import imread
 
 N_REGIONS_HIST = 4
-GLCM_QT_LEVELS = 32
+GLCM_QT_LEVELS = 64
 
 
 def __init__():
@@ -17,12 +17,12 @@ def __init__():
     file = open('features.csv', mode='w')
     first = True
 
-    for imagePath in paths.list_images("teste"):
+    for imagePath in paths.list_images("data"):
         img = imread(imagePath, 0)
-        entry = {'name': imagePath.split('/').pop()}
+        entry = {'name': imagePath.split('\\').pop()}
         features = extract_features(img)
         entry.update(features)
-        entry['class'] = imagePath.split('/')[-2].lower()
+        entry['class'] = imagePath.split('\\')[-2].lower()
 
         if first:
             print_head_csv(entry, file)
@@ -34,7 +34,9 @@ def __init__():
 
 def extract_features(img):
     histogram = get_histogram(img)
-    get_glcm(img, (1, 0))
+    glcm_1_0 = get_glcm(img, (1, 0))
+    glcm_0_1 = get_glcm(img, (0, 1))
+    glcm_1__1 = get_glcm(img, (1, -1))
 
     features = {
         "img_avg": get_average(img),
@@ -42,29 +44,48 @@ def extract_features(img):
         "img_kur": get_kurtosis(img),
         "img_med": get_median(img),
 
-        "hist_0_64": get_region_count(histogram[0:64]),
+        "hist_0_64_count": get_region_count(histogram[0:64]),
         "hist_0_64_avg": get_average(flat_hist(histogram, 0, 64)),
         "hist_0_64_std": get_st_deviation(flat_hist(histogram, 0, 64)),
         "hist_0_64_kur": get_kurtosis(flat_hist(histogram, 0, 64)),
         "hist_0_64_med": get_median(flat_hist(histogram, 0, 64)),
 
-        "hist_64_128": get_region_count(histogram[64:128]),
+        "hist_64_128_count": get_region_count(histogram[64:128]),
         "hist_64_128_avg": get_average(flat_hist(histogram, 64, 128)),
         "hist_64_128_std": get_st_deviation(flat_hist(histogram, 64, 128)),
         "hist_64_128_kur": get_kurtosis(flat_hist(histogram, 64, 128)),
         "hist_64_128_median": get_median(flat_hist(histogram, 64, 128)),
 
-        "hist_128_192": get_region_count(histogram[128:192]),
+        "hist_128_192_count": get_region_count(histogram[128:192]),
         "hist_128_192_avg": get_average(flat_hist(histogram, 128, 192)),
         "hist_128_192_std": get_st_deviation(flat_hist(histogram, 128, 192)),
         "hist_128_192_kur": get_kurtosis(flat_hist(histogram, 128, 192)),
         "hist_128_192_median": get_median(flat_hist(histogram, 128, 192)),
 
-        "hist_192_256": get_region_count(histogram[192:256]),
+        "hist_192_256_count": get_region_count(histogram[192:256]),
         "hist_192_256_avg": get_average(flat_hist(histogram, 192, 256)),
         "hist_192_256_std": get_st_deviation(flat_hist(histogram, 192, 256)),
         "hist_192_256_kur": get_kurtosis(flat_hist(histogram, 192, 256)),
         "hist_192_256_median": get_median(flat_hist(histogram, 192, 256)),
+
+        "glcm_1_0_asm": get_glcm_asm(glcm_1_0),
+        "glcm_1_0_entropy": get_glcm_entropy(glcm_1_0),
+        "glcm_1_0_contrast": get_glcm_contrast(glcm_1_0),
+        "glcm_1_0_variance": get_glcm_variance(glcm_1_0),
+        "glcm_1_0_homogeneity": get_glcm_homogeneity(glcm_1_0),
+
+        "glcm_0_1_asm": get_glcm_asm(glcm_0_1),
+        "glcm_0_1_entropy": get_glcm_entropy(glcm_0_1),
+        "glcm_0_1_contrast": get_glcm_contrast(glcm_0_1),
+        "glcm_0_1_variance": get_glcm_variance(glcm_0_1),
+        "glcm_0_1_homogeneity": get_glcm_homogeneity(glcm_0_1),
+
+        "glcm_1__1_asm": get_glcm_asm(glcm_1__1),
+        "glcm_1__1_entropy": get_glcm_entropy(glcm_1__1),
+        "glcm_1__1_contrast": get_glcm_contrast(glcm_1__1),
+        "glcm_1__1_variance": get_glcm_variance(glcm_1__1),
+        "glcm_1__1_homogeneity": get_glcm_homogeneity(glcm_1__1),
+
     }
 
     return features
@@ -214,7 +235,6 @@ def get_glcm(img, mask):
                 pass
 
     glcm = normalize_glcm(glcm, max_value)
-    print(glcm)
     return glcm
 
 
@@ -234,6 +254,42 @@ def normalize_glcm(glcm, max_value):
         for y in range(GLCM_QT_LEVELS):
             glcm[x, y] = glcm[x, y] / max_value
     return glcm
+
+
+def get_glcm_asm(glcm):
+    asm = 0
+    for i in range(GLCM_QT_LEVELS):
+        for j in range(GLCM_QT_LEVELS):
+            asm += glcm[i, j] ** 2
+    return asm
+
+
+def get_glcm_entropy(glcm):
+    return get_glcm_asm(glcm) ** (1 / 2)
+
+
+def get_glcm_contrast(glcm):
+    contrast = 0
+    for i in range(GLCM_QT_LEVELS):
+        for j in range(GLCM_QT_LEVELS):
+            contrast += glcm[i, j] * ((i - j) ** 2)
+    return contrast
+
+
+def get_glcm_variance(glcm):
+    variance = 0
+    for i in range(GLCM_QT_LEVELS):
+        for j in range(GLCM_QT_LEVELS):
+            variance += glcm[i, j] * abs(i - j)
+    return variance
+
+
+def get_glcm_homogeneity(glcm):
+    homogeneity = 0
+    for i in range(GLCM_QT_LEVELS):
+        for j in range(GLCM_QT_LEVELS):
+            homogeneity += glcm[i, j] * (glcm[i, j] / (1 + ((i - j) ** 2)))
+    return homogeneity
 
 
 __init__()
