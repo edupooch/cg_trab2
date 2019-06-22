@@ -20,12 +20,12 @@ def __init__():
     for imagePath in paths.list_images("data"):
         img = imread(imagePath, 0)
 
-        entry = {'name': imagePath.split('/').pop()}
+        entry = {'name': imagePath.split('\\').pop()}
 
         features = extract_features(img)
 
         entry.update(features)
-        entry['class'] = imagePath.split('/')[-2].lower()
+        entry['class'] = imagePath.split('\\')[-2].lower()
 
         if first:
             print_head_csv(entry, file)
@@ -44,54 +44,57 @@ def extract_features(img):
     lbp = get_lbp(img)
 
     features = {
-        #     "img_avg": get_average(img),
-        #     "img_std": get_st_deviation(img),
-        #     "img_kur": get_kurtosis(img),
-        #     "img_med": get_median(img),
-        #
-        #     "hist_0_64_count": get_region_count(histogram[0:64]),
-        #     "hist_0_64_avg": get_average(flat_hist(histogram, 0, 64)),
-        #     "hist_0_64_std": get_st_deviation(flat_hist(histogram, 0, 64)),
-        #     "hist_0_64_kur": get_kurtosis(flat_hist(histogram, 0, 64)),
-        #     "hist_0_64_med": get_median(flat_hist(histogram, 0, 64)),
-        #
-        #     "hist_64_128_count": get_region_count(histogram[64:128]),
-        #     "hist_64_128_avg": get_average(flat_hist(histogram, 64, 128)),
-        #     "hist_64_128_std": get_st_deviation(flat_hist(histogram, 64, 128)),
-        #     "hist_64_128_kur": get_kurtosis(flat_hist(histogram, 64, 128)),
-        #     "hist_64_128_median": get_median(flat_hist(histogram, 64, 128)),
-        #
-        #     "hist_128_192_count": get_region_count(histogram[128:192]),
-        #     "hist_128_192_avg": get_average(flat_hist(histogram, 128, 192)),
-        #     "hist_128_192_std": get_st_deviation(flat_hist(histogram, 128, 192)),
-        #     "hist_128_192_kur": get_kurtosis(flat_hist(histogram, 128, 192)),
-        #     "hist_128_192_median": get_median(flat_hist(histogram, 128, 192)),
-        #
-        #     "hist_192_256_count": get_region_count(histogram[192:256]),
-        #     "hist_192_256_avg": get_average(flat_hist(histogram, 192, 256)),
-        #     "hist_192_256_std": get_st_deviation(flat_hist(histogram, 192, 256)),
-        #     "hist_192_256_kur": get_kurtosis(flat_hist(histogram, 192, 256)),
-        #     "hist_192_256_median": get_median(flat_hist(histogram, 192, 256)),
-        #
-        #     "glcm_3_0_asm": get_glcm_asm(glcm_3_0),
-        #     "glcm_3_0_entropy": get_glcm_entropy(glcm_3_0),
-        #     "glcm_3_0_contrast": get_glcm_contrast(glcm_3_0),
-        #     "glcm_3_0_variance": get_glcm_variance(glcm_3_0),
-        #     "glcm_3_0_homogeneity": get_glcm_homogeneity(glcm_3_0),
-        #
-        #     "glcm_0_3_asm": get_glcm_asm(glcm_0_3),
-        #     "glcm_0_3_entropy": get_glcm_entropy(glcm_0_3),
-        #     "glcm_0_3_contrast": get_glcm_contrast(glcm_0_3),
-        #     "glcm_0_3_variance": get_glcm_variance(glcm_0_3),
-        #     "glcm_0_3_homogeneity": get_glcm_homogeneity(glcm_0_3),
-        #
-        #     "glcm_3__3_asm": get_glcm_asm(glcm_3__3),
-        #     "glcm_3__3_entropy": get_glcm_entropy(glcm_3__3),
-        #     "glcm_3__3_contrast": get_glcm_contrast(glcm_3__3),
-        #     "glcm_3__3_variance": get_glcm_variance(glcm_3__3),
-        #     "glcm_3__3_homogeneity": get_glcm_homogeneity(glcm_3__3),
-        #
+        "img_avg": get_average(img),
+        "img_std": get_st_deviation(img),
+        "img_kur": get_kurtosis(img),
+        "img_med": get_median(img),
+
+        "hist_0_64_count": get_region_count(histogram[0:64]),
+        "hist_0_64_avg": get_average(flat_hist(histogram, 0, 64)),
+        "hist_0_64_std": get_st_deviation(flat_hist(histogram, 0, 64)),
+        "hist_0_64_kur": get_kurtosis(flat_hist(histogram, 0, 64)),
+        "hist_0_64_med": get_median(flat_hist(histogram, 0, 64)),
+
+        "hist_64_128_count": get_region_count(histogram[64:128]),
+        "hist_64_128_avg": get_average(flat_hist(histogram, 64, 128)),
+        "hist_64_128_std": get_st_deviation(flat_hist(histogram, 64, 128)),
+        "hist_64_128_kur": get_kurtosis(flat_hist(histogram, 64, 128)),
+        "hist_64_128_median": get_median(flat_hist(histogram, 64, 128)),
+
+        "hist_128_192_count": get_region_count(histogram[128:192]),
+        "hist_128_192_avg": get_average(flat_hist(histogram, 128, 192)),
+        "hist_128_192_std": get_st_deviation(flat_hist(histogram, 128, 192)),
+        "hist_128_192_kur": get_kurtosis(flat_hist(histogram, 128, 192)),
+        "hist_128_192_median": get_median(flat_hist(histogram, 128, 192)),
+
+        "hist_192_256_count": get_region_count(histogram[192:256]),
+        "hist_192_256_avg": get_average(flat_hist(histogram, 192, 256)),
+        "hist_192_256_std": get_st_deviation(flat_hist(histogram, 192, 256)),
+        "hist_192_256_kur": get_kurtosis(flat_hist(histogram, 192, 256)),
+        "hist_192_256_median": get_median(flat_hist(histogram, 192, 256)),
+
+        "glcm_3_0_asm": get_glcm_asm(glcm_3_0),
+        "glcm_3_0_entropy": get_glcm_entropy(glcm_3_0),
+        "glcm_3_0_contrast": get_glcm_contrast(glcm_3_0),
+        "glcm_3_0_variance": get_glcm_variance(glcm_3_0),
+        "glcm_3_0_homogeneity": get_glcm_homogeneity(glcm_3_0),
+
+        "glcm_0_3_asm": get_glcm_asm(glcm_0_3),
+        "glcm_0_3_entropy": get_glcm_entropy(glcm_0_3),
+        "glcm_0_3_contrast": get_glcm_contrast(glcm_0_3),
+        "glcm_0_3_variance": get_glcm_variance(glcm_0_3),
+        "glcm_0_3_homogeneity": get_glcm_homogeneity(glcm_0_3),
+
+        "glcm_3__3_asm": get_glcm_asm(glcm_3__3),
+        "glcm_3__3_entropy": get_glcm_entropy(glcm_3__3),
+        "glcm_3__3_contrast": get_glcm_contrast(glcm_3__3),
+        "glcm_3__3_variance": get_glcm_variance(glcm_3__3),
+        "glcm_3__3_homogeneity": get_glcm_homogeneity(glcm_3__3),
     }
+
+    for value in lbp:
+        key = "lbp_" + str(value)
+        features[key] = value
 
     return features
 
@@ -309,17 +312,16 @@ def get_lbp(img):
         for j in range(0, img_pad.shape[0] - 4):
             byte = ""
             for point in neighbours:
-                if img_pad[i + 2 + point[0], j + 2 + point[1]] >= img_pad[i+2, j+2]:
+                if img_pad[i + 2 + point[0], j + 2 + point[1]] >= img_pad[i + 2, j + 2]:
                     byte = "1" + byte
                 else:
                     byte = "0" + byte
             lbp[i, j] = int(byte, 2)
 
-    print(lbp.astype(int))
-    imshow('img', img)
-    imshow('lbp', lbp)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    (hist, _) = np.histogram(lbp.ravel(),
+                             bins=8 + 3,
+                             range=(0, 8 + 2))
+    return hist
 
 
 def replacer(s, newstring, index, nofail=False):

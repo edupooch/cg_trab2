@@ -9,7 +9,7 @@ dataset = pd.read_csv('features.csv')
 y = dataset.pop('class')
 X = dataset
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.8, random_state=2, stratify=y)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.8, stratify=y)
 
 X_train['class'] = y_train
 
