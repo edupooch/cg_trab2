@@ -7,8 +7,10 @@ import matplotlib.pyplot as plt
 from math import ceil
 from cv2 import imread, imshow, cv2
 
+IMG_SHAPE = 256
 N_REGIONS_HIST = 4
 GLCM_QT_LEVELS = 32
+N_BINS = 8 + 3
 
 
 def __init__():
@@ -20,12 +22,12 @@ def __init__():
     for imagePath in paths.list_images("data"):
         img = imread(imagePath, 0)
 
-        entry = {'name': imagePath.split('\\').pop()}
+        entry = {'name': imagePath.split('/').pop()}
 
         features = extract_features(img)
 
         entry.update(features)
-        entry['class'] = imagePath.split('\\')[-2].lower()
+        entry['class'] = imagePath.split('/')[-2].lower()
 
         if first:
             print_head_csv(entry, file)
@@ -42,6 +44,7 @@ def extract_features(img):
     glcm_3__3 = get_glcm(img, (3, -3))
 
     lbp = get_lbp(img)
+    mcc = get_mcc(img)
 
     features = {
         "img_avg": get_average(img),
@@ -92,9 +95,22 @@ def extract_features(img):
         "glcm_3__3_homogeneity": get_glcm_homogeneity(glcm_3__3),
     }
 
-    for value in lbp:
-        key = "lbp_" + str(value)
-        features[key] = value
+    for i in range(N_BINS):
+        key = "lbp_" + str(i)
+        features[key] = lbp[i]
+
+    features.update({
+        "mcc_rp": get_mcc_rp(mcc),
+        "mcc_sre": get_mcc_sre(mcc),
+        "mcc_lre": get_mcc_lre(mcc),
+        "mcc_gln": get_mcc_gln(mcc),
+        "mcc_rln": get_mcc_rln(mcc),
+        "mcc_lgre": get_mcc_lgre(mcc),
+        "mcc_hgre": get_mcc_hgre(mcc),
+        "mcc_srlge": get_mcc_srlge(mcc),
+        "mcc_srhge": get_mcc_srhge(mcc),
+        "mcc_lrlge": get_mcc_lrlge(mcc),
+        "mcc_lrhge": get_mcc_lrhge(mcc), })
 
     return features
 
@@ -112,6 +128,8 @@ def print_features_csv(features, file):
         entry = entry + str(features[key]) + ","
     print(entry[:-1], file=file)
 
+
+##### HISTOGRAM #############################
 
 def get_histogram(img):
     x_size = img.shape[0]
@@ -219,6 +237,8 @@ def get_region_count(histogram_region):
     return count
 
 
+##### GLCM #############################
+
 def get_glcm(img, mask):
     r_img = reduce_tones(img)
     size_x = r_img.shape[0]
@@ -301,6 +321,7 @@ def get_glcm_homogeneity(glcm):
     return homogeneity
 
 
+##### LBP #############################
 def get_lbp(img):
     lbp = np.zeros(img.shape, dtype=np.uint8)
     img_pad = np.zeros((img.shape[0] + 4, (img.shape[1] + 4)))
@@ -319,24 +340,152 @@ def get_lbp(img):
             lbp[i, j] = int(byte, 2)
 
     (hist, _) = np.histogram(lbp.ravel(),
-                             bins=8 + 3,
+                             bins=N_BINS,
                              range=(0, 8 + 2))
     return hist
 
 
-def replacer(s, newstring, index, nofail=False):
-    # raise an error if index is outside of the string
-    if not nofail and index not in xrange(len(s)):
-        raise ValueError("index outside given string")
+##### MCC #############################
 
-    # if not erroring, but the index is still not in the correct range..
-    if index < 0:  # add it to the beginning
-        return newstring + s
-    if index > len(s):  # add it to the end
-        return s + newstring
+def get_mcc(img):
+    size_x = img.shape[0]
+    size_y = img.shape[1]
 
-    # insert the new string between "slices" of the original
-    return s[:index] + newstring + s[index + 1:]
+    r_img = reduce_tones(img)
+    mcc = np.zeros((GLCM_QT_LEVELS, 50), dtype=int)
+
+    for i in range(size_x):
+        for j in range(size_y):
+            seq = True
+            k = 0
+
+            while seq:
+                if (j + k < size_y) and (r_img[i, j] == r_img[i, j + k]):
+                    k = k + 1
+                else:
+                    seq = False
+
+            mcc[int(r_img[i, j]), k - 1] += 1
+
+    return mcc
+
+
+def get_mcc_rp(mcc):
+    nr = get_nr(mcc)
+    return nr / (IMG_SHAPE * IMG_SHAPE)
+
+
+def get_nr(mcc):
+    nr = 0
+    for i in range(mcc.shape[0]):
+        for j in range(mcc.shape[1]):
+            if mcc[i, j] > 0:
+                nr += 1
+
+    return nr
+
+
+def get_mcc_sre(mcc):
+    sre = 0
+    for i in range(mcc.shape[0]):
+        for k in range(mcc.shape[1]):
+            sre += (mcc[i, k] / ((k ** 2) + 1e-7))
+    nr = get_nr(mcc)
+    return sre / nr
+
+
+def get_mcc_lre(mcc):
+    lre = 0
+    for i in range(mcc.shape[0]):
+        for k in range(mcc.shape[1]):
+            lre += (mcc[i, k] * (k ** 2))
+
+    nr = get_nr(mcc)
+    return lre / nr
+
+
+def get_mcc_gln(mcc):
+    gln = 0
+    for i in range(mcc.shape[0]):
+        gln_k = 0
+        for k in range(mcc.shape[1]):
+            gln_k += (mcc[i, k])
+        gln += gln_k ** 2
+
+    nr = get_nr(mcc)
+    return gln / nr
+
+
+def get_mcc_rln(mcc):
+    rln = 0
+    for k in range(mcc.shape[1]):
+        rln_i = 0
+        for i in range(mcc.shape[0]):
+            rln_i += (mcc[i, k])
+        rln += rln_i ** 2
+
+    nr = get_nr(mcc)
+    return rln / nr
+
+
+def get_mcc_lgre(mcc):
+    lgre = 0
+    for i in range(mcc.shape[0]):
+        for k in range(mcc.shape[1]):
+            lgre += (mcc[i, k] / ((i ** 2) + 1e-7))
+
+    nr = get_nr(mcc)
+    return lgre / nr
+
+
+def get_mcc_hgre(mcc):
+    hgre = 0
+    for i in range(mcc.shape[0]):
+        for k in range(mcc.shape[1]):
+            hgre += (mcc[i, k] * (i ** 2))
+
+    nr = get_nr(mcc)
+    return hgre / nr
+
+
+def get_mcc_srlge(mcc):
+    srlge = 0
+    for i in range(mcc.shape[0]):
+        for k in range(mcc.shape[1]):
+            srlge += (mcc[i, k] / (((i ** 2) * (k ** 2)) + 1e-7))
+
+    nr = get_nr(mcc)
+    return srlge / nr
+
+
+def get_mcc_srhge(mcc):
+    srhge = 0
+    for i in range(mcc.shape[0]):
+        for k in range(mcc.shape[1]):
+            srhge += ((mcc[i, k] * (i ** 2)) / ((k ** 2) + 1e-7))
+
+    nr = get_nr(mcc)
+    return srhge / nr
+
+
+def get_mcc_lrlge(mcc):
+    lrlge = 0
+    for i in range(mcc.shape[0]):
+        for k in range(mcc.shape[1]):
+            lrlge += ((mcc[i, k] * (k ** 2)) / ((i ** 2) + 1e-7))
+
+    nr = get_nr(mcc)
+    return lrlge / nr
+
+
+def get_mcc_lrhge(mcc):
+    lrhge = 0
+    for i in range(mcc.shape[0]):
+        for k in range(mcc.shape[1]):
+            lrhge += (mcc[i, k] * (i ** 2) * (k ** 2))
+
+    nr = get_nr(mcc)
+    return lrhge / nr
 
 
 __init__()

@@ -3,13 +3,14 @@ from sklearn.model_selection import train_test_split
 from sklearn import preprocessing
 
 import numpy as np
+
 pd.options.mode.chained_assignment = None
 
 dataset = pd.read_csv('features.csv')
 y = dataset.pop('class')
 X = dataset
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.8, stratify=y)
+X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=2, test_size=0.8, stratify=y)
 
 X_train['class'] = y_train
 
