@@ -10,7 +10,6 @@ from cv2 import imread, imshow, cv2
 IMG_SHAPE = 256
 N_REGIONS_HIST = 4
 GLCM_QT_LEVELS = 32
-N_BINS = 8 + 3
 
 
 def __init__():
@@ -39,12 +38,13 @@ def __init__():
 
 def extract_features(img):
     histogram = get_histogram(img)
+
     glcm_3_0 = get_glcm(img, (3, 0))
     glcm_0_3 = get_glcm(img, (0, 3))
     glcm_3__3 = get_glcm(img, (3, -3))
 
     lbp = get_lbp(img)
-    mcc = get_mcc(img)
+    glrm = get_glrm(img)
 
     features = {
         "img_avg": get_average(img),
@@ -95,22 +95,22 @@ def extract_features(img):
         "glcm_3__3_homogeneity": get_glcm_homogeneity(glcm_3__3),
     }
 
-    for i in range(N_BINS):
+    for i in range(len(lbp)):
         key = "lbp_" + str(i)
         features[key] = lbp[i]
 
     features.update({
-        "mcc_rp": get_mcc_rp(mcc),
-        "mcc_sre": get_mcc_sre(mcc),
-        "mcc_lre": get_mcc_lre(mcc),
-        "mcc_gln": get_mcc_gln(mcc),
-        "mcc_rln": get_mcc_rln(mcc),
-        "mcc_lgre": get_mcc_lgre(mcc),
-        "mcc_hgre": get_mcc_hgre(mcc),
-        "mcc_srlge": get_mcc_srlge(mcc),
-        "mcc_srhge": get_mcc_srhge(mcc),
-        "mcc_lrlge": get_mcc_lrlge(mcc),
-        "mcc_lrhge": get_mcc_lrhge(mcc), })
+        "glrm_rp": get_glrm_rp(glrm),
+        "glrm_sre": get_glrm_sre(glrm),
+        "glrm_lre": get_glrm_lre(glrm),
+        "glrm_gln": get_glrm_gln(glrm),
+        "glrm_rln": get_glrm_rln(glrm),
+        "glrm_lgre": get_glrm_lgre(glrm),
+        "glrm_hgre": get_glrm_hgre(glrm),
+        "glrm_srlge": get_glrm_srlge(glrm),
+        "glrm_srhge": get_glrm_srhge(glrm),
+        "glrm_lrlge": get_glrm_lrlge(glrm),
+        "glrm_lrhge": get_glrm_lrhge(glrm), })
 
     return features
 
@@ -339,20 +339,39 @@ def get_lbp(img):
                     byte = "0" + byte
             lbp[i, j] = int(byte, 2)
 
-    (hist, _) = np.histogram(lbp.ravel(),
-                             bins=N_BINS,
-                             range=(0, 8 + 2))
-    return hist
+    hist = get_histogram(lbp)
+
+    UNIFORM_PATTERNS = [0, 1, 2, 3, 4, 6, 7, 8, 12, 14, 15, 16, 24, 28, 30, 31, 32, 48, 56, 60, 62, 63, 64, 96, 112,
+                        120, 124, 126, 127, 128, 129, 131, 135, 143, 159, 191, 192, 193, 195, 199, 207, 223, 224, 225,
+                        227, 231, 239, 240, 241, 243, 247, 248, 249, 251, 252, 253, 254, 255]
+
+    NOT_UNIFORM = [i for i in range(256) if i not in UNIFORM_PATTERNS]
+
+    lbp_hist = np.zeros(len(UNIFORM_PATTERNS) + 1, dtype=int)
+
+    for i in range(len(UNIFORM_PATTERNS)):
+        lbp_hist[i] = hist[UNIFORM_PATTERNS[i]]
+
+    for i in range(len(NOT_UNIFORM)):
+        lbp_hist[len(UNIFORM_PATTERNS)] += hist[NOT_UNIFORM[i]]
+
+    # LBP_HIST_SIZE = 16
+    # lbp_hist = np.zeros(LBP_HIST_SIZE, dtype=int)
+    # for i in range(len(hist)):
+    #     index = int(i / (256 / LBP_HIST_SIZE))
+    #     lbp_hist[index] += hist[i]
+
+    return lbp_hist
 
 
-##### MCC #############################
+##### glrm #############################
 
-def get_mcc(img):
+def get_glrm(img):
     size_x = img.shape[0]
     size_y = img.shape[1]
 
     r_img = reduce_tones(img)
-    mcc = np.zeros((GLCM_QT_LEVELS, 50), dtype=int)
+    glrm = np.zeros((GLCM_QT_LEVELS, 50), dtype=int)
 
     for i in range(size_x):
         for j in range(size_y):
@@ -365,126 +384,126 @@ def get_mcc(img):
                 else:
                     seq = False
 
-            mcc[int(r_img[i, j]), k - 1] += 1
+            glrm[int(r_img[i, j]), k - 1] += 1
 
-    return mcc
+    return glrm
 
 
-def get_mcc_rp(mcc):
-    nr = get_nr(mcc)
+def get_glrm_rp(glrm):
+    nr = get_nr(glrm)
     return nr / (IMG_SHAPE * IMG_SHAPE)
 
 
-def get_nr(mcc):
+def get_nr(glrm):
     nr = 0
-    for i in range(mcc.shape[0]):
-        for j in range(mcc.shape[1]):
-            if mcc[i, j] > 0:
+    for i in range(glrm.shape[0]):
+        for j in range(glrm.shape[1]):
+            if glrm[i, j] > 0:
                 nr += 1
 
     return nr
 
 
-def get_mcc_sre(mcc):
+def get_glrm_sre(glrm):
     sre = 0
-    for i in range(mcc.shape[0]):
-        for k in range(mcc.shape[1]):
-            sre += (mcc[i, k] / ((k ** 2) + 1e-7))
-    nr = get_nr(mcc)
+    for i in range(glrm.shape[0]):
+        for k in range(glrm.shape[1]):
+            sre += (glrm[i, k] / ((k ** 2) + 1e-7))
+    nr = get_nr(glrm)
     return sre / nr
 
 
-def get_mcc_lre(mcc):
+def get_glrm_lre(glrm):
     lre = 0
-    for i in range(mcc.shape[0]):
-        for k in range(mcc.shape[1]):
-            lre += (mcc[i, k] * (k ** 2))
+    for i in range(glrm.shape[0]):
+        for k in range(glrm.shape[1]):
+            lre += (glrm[i, k] * (k ** 2))
 
-    nr = get_nr(mcc)
+    nr = get_nr(glrm)
     return lre / nr
 
 
-def get_mcc_gln(mcc):
+def get_glrm_gln(glrm):
     gln = 0
-    for i in range(mcc.shape[0]):
+    for i in range(glrm.shape[0]):
         gln_k = 0
-        for k in range(mcc.shape[1]):
-            gln_k += (mcc[i, k])
+        for k in range(glrm.shape[1]):
+            gln_k += (glrm[i, k])
         gln += gln_k ** 2
 
-    nr = get_nr(mcc)
+    nr = get_nr(glrm)
     return gln / nr
 
 
-def get_mcc_rln(mcc):
+def get_glrm_rln(glrm):
     rln = 0
-    for k in range(mcc.shape[1]):
+    for k in range(glrm.shape[1]):
         rln_i = 0
-        for i in range(mcc.shape[0]):
-            rln_i += (mcc[i, k])
+        for i in range(glrm.shape[0]):
+            rln_i += (glrm[i, k])
         rln += rln_i ** 2
 
-    nr = get_nr(mcc)
+    nr = get_nr(glrm)
     return rln / nr
 
 
-def get_mcc_lgre(mcc):
+def get_glrm_lgre(glrm):
     lgre = 0
-    for i in range(mcc.shape[0]):
-        for k in range(mcc.shape[1]):
-            lgre += (mcc[i, k] / ((i ** 2) + 1e-7))
+    for i in range(glrm.shape[0]):
+        for k in range(glrm.shape[1]):
+            lgre += (glrm[i, k] / ((i ** 2) + 1e-7))
 
-    nr = get_nr(mcc)
+    nr = get_nr(glrm)
     return lgre / nr
 
 
-def get_mcc_hgre(mcc):
+def get_glrm_hgre(glrm):
     hgre = 0
-    for i in range(mcc.shape[0]):
-        for k in range(mcc.shape[1]):
-            hgre += (mcc[i, k] * (i ** 2))
+    for i in range(glrm.shape[0]):
+        for k in range(glrm.shape[1]):
+            hgre += (glrm[i, k] * (i ** 2))
 
-    nr = get_nr(mcc)
+    nr = get_nr(glrm)
     return hgre / nr
 
 
-def get_mcc_srlge(mcc):
+def get_glrm_srlge(glrm):
     srlge = 0
-    for i in range(mcc.shape[0]):
-        for k in range(mcc.shape[1]):
-            srlge += (mcc[i, k] / (((i ** 2) * (k ** 2)) + 1e-7))
+    for i in range(glrm.shape[0]):
+        for k in range(glrm.shape[1]):
+            srlge += (glrm[i, k] / (((i ** 2) * (k ** 2)) + 1e-7))
 
-    nr = get_nr(mcc)
+    nr = get_nr(glrm)
     return srlge / nr
 
 
-def get_mcc_srhge(mcc):
+def get_glrm_srhge(glrm):
     srhge = 0
-    for i in range(mcc.shape[0]):
-        for k in range(mcc.shape[1]):
-            srhge += ((mcc[i, k] * (i ** 2)) / ((k ** 2) + 1e-7))
+    for i in range(glrm.shape[0]):
+        for k in range(glrm.shape[1]):
+            srhge += ((glrm[i, k] * (i ** 2)) / ((k ** 2) + 1e-7))
 
-    nr = get_nr(mcc)
+    nr = get_nr(glrm)
     return srhge / nr
 
 
-def get_mcc_lrlge(mcc):
+def get_glrm_lrlge(glrm):
     lrlge = 0
-    for i in range(mcc.shape[0]):
-        for k in range(mcc.shape[1]):
-            lrlge += ((mcc[i, k] * (k ** 2)) / ((i ** 2) + 1e-7))
+    for i in range(glrm.shape[0]):
+        for k in range(glrm.shape[1]):
+            lrlge += ((glrm[i, k] * (k ** 2)) / ((i ** 2) + 1e-7))
 
-    nr = get_nr(mcc)
+    nr = get_nr(glrm)
     return lrlge / nr
 
 
-def get_mcc_lrhge(mcc):
+def get_glrm_lrhge(glrm):
     lrhge = 0
-    for i in range(mcc.shape[0]):
-        for k in range(mcc.shape[1]):
-            lrhge += (mcc[i, k] * (i ** 2) * (k ** 2))
+    for i in range(glrm.shape[0]):
+        for k in range(glrm.shape[1]):
+            lrhge += (glrm[i, k] * (i ** 2) * (k ** 2))
 
-    nr = get_nr(mcc)
+    nr = get_nr(glrm)
     return lrhge / nr
 
 

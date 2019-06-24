@@ -6,7 +6,7 @@ import numpy as np
 
 pd.options.mode.chained_assignment = None
 
-dataset = pd.read_csv('features.csv')
+dataset = pd.read_csv('features_1.csv')
 y = dataset.pop('class')
 X = dataset
 
