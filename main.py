@@ -252,7 +252,7 @@ def get_glcm(img, mask):
 
     for x in range(size_x):
         for y in range(size_y):
-            if (x + dis_x >= 0 and x + dis_x < size_x) and (y + dis_y >= 0 and y + dis_y < size_y):
+            if (0 <= x + dis_x < size_x) and (0 <= y + dis_y < size_y):
                 point = int(r_img[x, y])
                 neighbor = int(r_img[x + dis_x, y + dis_y])
 

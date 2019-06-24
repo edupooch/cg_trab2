@@ -6,16 +6,16 @@ import numpy as np
 
 pd.options.mode.chained_assignment = None
 
-dataset = pd.read_csv('features_1.csv')
+dataset = pd.read_csv('features_5.csv')
 y = dataset.pop('class')
 X = dataset
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=2, test_size=0.8, stratify=y)
 
 X_train['class'] = y_train
-
 X_test['class'] = y_test
 
+# Normalize:
 min_max_scaler = preprocessing.MinMaxScaler()
 colunas = X_train.columns[1:-1]
 X_train[colunas] = min_max_scaler.fit_transform(X_train[colunas])

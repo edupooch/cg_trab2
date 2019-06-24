@@ -30,7 +30,7 @@ print('Numero de registros de treino:', len(treino))
 print('Numero de registros de teste:', len(teste))
 
 # Treino do classificador
-clf = MLPClassifier(hidden_layer_sizes=[30, 10], max_iter=500, random_state=1)
+clf = MLPClassifier(hidden_layer_sizes=[50, 20], max_iter=500, random_state=1)
 clf.fit(treino[preditivos], treino[alvo])
 
 # Teste
